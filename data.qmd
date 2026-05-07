@@ -1,0 +1,265 @@
+---
+title: "Data"
+---
+
+## Data Sources
+
+### 1. Transfermarkt — Squad Market Values
+
+[Transfermarkt](https://www.transfermarkt.com) is the most comprehensive platform for tracking football player market values, updated regularly by a community of football analysts. Player-level market values for all Turkish Süper Lig clubs across the 2023-24, 2024-25, and 2025-26 seasons were retrieved via the `worldfootballR` R package.
+
+- **Currency:** Euro (€)
+- **Coverage:** All registered players per season (~400–500 players/season)
+- **Key Variables:** `squad_name`, `player_name`, `player_position`, `player_market_value_euro`
+
+### 2. FBref — League Table & Player Statistics
+
+[FBref](https://fbref.com) provides detailed football statistics powered by StatsBomb data. Both club-level standings (W, D, L, GF, GA, GD, Pts) and player-level statistics (goals, assists, minutes played, position, goalkeeper save percentage) were collected here.
+
+- **Coverage:** 3 seasons, ~20 clubs/season, all registered players
+- **Key Variables:** `Squad`, `W`, `D`, `L`, `GF`, `GA`, `GD`, `Pts`, `Player`, `Pos`, `Min`, `Gls`, `Ast`, `Save%`
+
+### 3. Capology — Wage Data
+
+[Capology.com](https://www.capology.com) aggregates club-level wage bill data. The `worldfootballR` function `capology_club_wage_data()` was used to retrieve Turkish Süper Lig clubs' total annual wage expenditures.
+
+- **Currency:** Euro (€), annualised
+- **Important:** January (winter transfer window) arrivals have their annual wage **halved** before inclusion in team totals.
+- **Coverage:** Club-level total wage bill per season
+
+---
+
+## Data Collection Code
+
+The following code was used to collect raw data. `Sys.sleep()` delays are applied between requests to respect rate limits on Transfermarkt and FBref. Raw files are saved as `.RData` files in the `data/` folder.
+
+```{r collect-setup}
+#| eval: false
+#| code-fold: true
+#| code-summary: "Package Setup"
+
+if (!requireNamespace("worldfootballR", quietly = TRUE)) install.packages("worldfootballR")
+if (!requireNamespace("tidyverse",      quietly = TRUE)) install.packages("tidyverse")
+
+library(worldfootballR)
+library(dplyr)
+library(purrr)
+library(stringr)
+```
+
+```{r collect-tm}
+#| eval: false
+#| code-fold: true
+#| code-summary: "Transfermarkt — Squad Market Values"
+
+collect_tm_values <- function(start_year) {
+  message("Fetching Transfermarkt: ", start_year, "-", start_year + 1)
+  Sys.sleep(8)
+  tm_player_market_values(country_name = "Turkey", start_year = start_year)
+}
+
+tm_2324 <- collect_tm_values(2023); Sys.sleep(8)
+tm_2425 <- collect_tm_values(2024); Sys.sleep(8)
+tm_2526 <- collect_tm_values(2025)
+
+tm_2324$season <- "2023-24"
+tm_2425$season <- "2024-25"
+tm_2526$season <- "2025-26"
+
+raw_tm <- bind_rows(tm_2324, tm_2425, tm_2526)
+save(raw_tm, file = "data/raw_tm_values.RData")
+message("Saved: ", nrow(raw_tm), " rows, ", n_distinct(raw_tm$squad_name), " clubs")
+```
+
+```{r collect-fbref}
+#| eval: false
+#| code-fold: true
+#| code-summary: "FBref — League Table & Player Statistics"
+
+collect_standings <- function(season_end_year) {
+  Sys.sleep(5)
+  fb_season_team_stats(country="TUR", gender="M",
+                       season_end_year=season_end_year, tier="1st",
+                       stat_type="standard")
+}
+
+collect_players <- function(season_end_year, season_label) {
+  league_url <- fb_league_urls(country="TUR", gender="M",
+                               season_end_year=season_end_year, tier="1st")
+  Sys.sleep(4)
+  team_urls <- fb_teams_urls(league_url[1])
+  Sys.sleep(4)
+
+  std <- map_dfr(team_urls, ~{ Sys.sleep(2.5)
+    tryCatch(fb_team_player_stats(.x, stat_type="standard"), error=\(e) NULL) })
+  gk  <- map_dfr(team_urls, ~{ Sys.sleep(2.5)
+    tryCatch(fb_team_player_stats(.x, stat_type="keeper"),   error=\(e) NULL) })
+
+  std$season <- gk$season <- season_label
+  list(std=std, gk=gk)
+}
+
+standings_2324 <- collect_standings(2024); standings_2324$season <- "2023-24"
+standings_2425 <- collect_standings(2025); standings_2425$season <- "2024-25"
+standings_2526 <- collect_standings(2026); standings_2526$season <- "2025-26"
+
+p2324 <- collect_players(2024, "2023-24")
+p2425 <- collect_players(2025, "2024-25")
+p2526 <- collect_players(2026, "2025-26")
+
+raw_standings  <- bind_rows(standings_2324, standings_2425, standings_2526)
+raw_player_std <- bind_rows(p2324$std, p2425$std, p2526$std)
+raw_player_gk  <- bind_rows(p2324$gk,  p2425$gk,  p2526$gk)
+
+save(raw_standings, raw_player_std, raw_player_gk, file="data/raw_fbref.RData")
+```
+
+```{r collect-capology}
+#| eval: false
+#| code-fold: true
+#| code-summary: "Capology — Club Wage Data"
+
+collect_wages <- function(season_end_year, label) {
+  Sys.sleep(5)
+  tryCatch({
+    df <- capology_club_wage_data(country_name="turkey",
+                                  season_end_year=season_end_year)
+    df$season <- label; df
+  }, error = \(e) { message("Capology error (", label, "): ", e$message); NULL })
+}
+
+wages_2324 <- collect_wages(2024, "2023-24")
+wages_2425 <- collect_wages(2025, "2024-25")
+wages_2526 <- collect_wages(2026, "2025-26")
+
+raw_wages <- bind_rows(compact(list(wages_2324, wages_2425, wages_2526)))
+save(raw_wages, file="data/raw_wages.RData")
+```
+
+---
+
+## Preprocessing Steps
+
+The following steps are implemented in `R/02_clean_merge.R` and produce `data/superlig_final.RData`.
+
+```{r preprocessing}
+#| eval: false
+#| code-fold: true
+#| code-summary: "Cleaning & Merging — R/02_clean_merge.R"
+
+# 1. Team name standardisation
+#    Transfermarkt, FBref, and Capology use different name formats.
+#    A lookup table maps all variants to a canonical form (e.g. "Basaksehir" → "Başakşehir").
+
+# 2. Squad market value aggregation
+#    Sum player_market_value_euro per club per season.
+#    Derive avg_player_value_eur and squad_size.
+
+# 3. FBref standings cleaning
+#    Cast W, D, L, GF, GA, GD, Pts to integer.
+#    Filter rows where Pts is NA (e.g. Hatayspor withdrawal row in 2023-24).
+
+# 4. Player stats cleaning
+#    Extract primary position from multi-position strings (e.g. "DF,MF" → "DF").
+#    Remove commas from minute counts before casting to integer.
+#    Deduplicate by player-team-season.
+
+# 5. GK stats
+#    Extract Save% column; require gk_minutes > 0.
+
+# 6. Wage data cleaning
+#    Parse wage strings to numeric (strip currency symbols, commas).
+#    If only weekly wages are available, multiply by 52 to annualise.
+
+# 7. Club-level merge
+#    standings LEFT JOIN squad_values LEFT JOIN wages.
+#    Keep only rows with non-NA squad_market_value_eur.
+
+# 8. Player-level merge
+#    player_clean LEFT JOIN tm_player_lookup (market value per player).
+#    Fill missing values with team-average player value.
+
+# 9. Save
+save(team_season, player_full, gk_clean, squad_values,
+     file = "data/superlig_final.RData")
+```
+
+---
+
+## Data Limitations
+
+:::{.callout-warning}
+**2025-26 Season — Incomplete Data**
+
+As of May 2026, the 2025-26 season may not yet be finished. The final 2–4 match-weeks could be missing, causing points and player statistics for this season to appear lower than the final standings. This limitation is flagged throughout the Analysis page wherever 2025-26 figures are discussed.
+:::
+
+:::{.callout-note}
+**Capology Coverage**
+
+Capology.com provides **club-level** total wage bills. Player-level salary breakdowns are not always publicly available. When individual forward wages are needed (Analysis section 3), a per-player estimate is derived by dividing the total wage bill by squad size.
+:::
+
+:::{.callout-note}
+**Within-League Transfer Detection**
+
+Mid-season within-league transfers are identified by players who appear under two different clubs in the same season in the FBref data. Transfers from foreign leagues are excluded because those players appear under only one Süper Lig club entry.
+:::
+
+---
+
+## Data Preview
+
+```{r data-preview}
+#| code-fold: true
+#| code-summary: "Load & Preview Data"
+
+suppressPackageStartupMessages({
+  library(dplyr)
+  library(knitr)
+})
+
+load("data/superlig_final.RData")
+```
+
+::: {.panel-tabset}
+
+### Club-Season Table
+
+```{r preview-team}
+#| code-fold: true
+
+kable(
+  head(team_season |> arrange(season, desc(Pts)), 20),
+  caption = "Club-Season Summary (first 20 rows, sorted by points)",
+  format.args = list(big.mark = ",")
+)
+```
+
+### Player Statistics
+
+```{r preview-player}
+#| code-fold: true
+
+kable(
+  head(player_full |> arrange(desc(goals)), 20),
+  caption = "Player Statistics (top 20 by goals scored)"
+)
+```
+
+### Goalkeeper Statistics
+
+```{r preview-gk}
+#| code-fold: true
+
+kable(
+  head(gk_clean |> arrange(desc(save_pct)), 15),
+  caption = "Goalkeeper Statistics (top 15 by save percentage)"
+)
+```
+
+:::
+
+---
+
+**Download cleaned dataset:** [`superlig_final.RData`](data/superlig_final.RData)

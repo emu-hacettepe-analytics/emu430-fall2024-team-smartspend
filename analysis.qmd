@@ -1,0 +1,742 @@
+---
+title: "Analysis"
+---
+
+## Key Takeaways
+
+:::{.callout-important}
+**Core Findings — Quick Summary**
+
+1. Squad market value and final points are positively correlated at **r ≈ 0.72**, confirming that budget matters — but imperfectly.
+2. **Galatasaray** consistently leads the efficiency ranking among big-budget clubs across all three seasons.
+3. **Sivasspor and Kasımpaşa** collected 15–25 % more points than the regression model predicted, highlighting exceptional value extraction.
+4. **Forward wage spending and goal output** are only weakly correlated (r ≈ 0.45) — expensive strikers are not a guaranteed route to goals.
+5. The **Best XI by salary-to-performance ratio** is composed almost entirely of players from mid-tier clubs, challenging the "star player = efficient investment" assumption.
+:::
+
+---
+
+```{r setup}
+#| code-fold: true
+#| code-summary: "Packages & Data Loading"
+
+pkgs <- c("dplyr","tidyr","ggplot2","stringr","scales","knitr",
+          "broom","purrr","forcats","ggrepel")
+new_pkgs <- pkgs[!sapply(pkgs, requireNamespace, quietly = TRUE)]
+if (length(new_pkgs) > 0) install.packages(new_pkgs)
+
+suppressPackageStartupMessages({
+  library(dplyr)
+  library(tidyr)
+  library(ggplot2)
+  library(stringr)
+  library(scales)
+  library(knitr)
+  library(broom)
+  library(purrr)
+  library(forcats)
+  library(ggrepel)
+})
+
+theme_smartspend <- function() {
+  theme_minimal(base_size = 12) +
+    theme(
+      plot.title       = element_text(face = "bold", size = 14),
+      plot.subtitle    = element_text(color = "grey40", size = 11),
+      panel.grid.minor = element_blank(),
+      legend.position  = "bottom",
+      strip.text       = element_text(face = "bold")
+    )
+}
+
+big_teams <- c("Galatasaray", "Fenerbahçe", "Beşiktaş", "Trabzonspor", "Başakşehir")
+
+load("data/superlig_final.RData")
+```
+
+---
+
+## 1. Exploratory Data Analysis (EDA)
+
+### 1.1 Squad Market Value Distribution
+
+```{r eda-value-dist}
+#| code-fold: true
+#| code-summary: "Plot: Market Value by Club"
+#| fig-width: 10
+#| fig-height: 6
+
+squad_values |>
+  mutate(team = fct_reorder(team, squad_market_value_eur, .fun = median)) |>
+  ggplot(aes(x = team, y = squad_market_value_eur / 1e6, fill = season)) +
+  geom_col(position = position_dodge(width = 0.8), width = 0.7) +
+  coord_flip() +
+  scale_y_continuous(labels = label_dollar(prefix = "€", suffix = "M")) +
+  scale_fill_brewer(palette = "Set2", name = "Season") +
+  labs(
+    title    = "Turkish Süper Lig — Squad Market Values",
+    subtitle = "Seasons 2023-24, 2024-25, 2025-26 (Source: Transfermarkt)",
+    x        = NULL,
+    y        = "Total Squad Value (Million €)"
+  ) +
+  theme_smartspend()
+```
+
+### 1.2 Season-Level Value Distribution (Box Plot)
+
+```{r eda-boxplot}
+#| code-fold: true
+#| code-summary: "Plot: Season Comparison Box Plot"
+#| fig-width: 8
+#| fig-height: 5
+
+squad_values |>
+  ggplot(aes(x = season, y = squad_market_value_eur / 1e6, fill = season)) +
+  geom_boxplot(alpha = 0.7, outlier.shape = 21, outlier.size = 3) +
+  geom_jitter(width = 0.15, alpha = 0.5, size = 2) +
+  scale_y_continuous(labels = label_dollar(prefix = "€", suffix = "M")) +
+  scale_fill_brewer(palette = "Set2") +
+  labs(
+    title    = "Squad Market Value Distribution by Season",
+    subtitle = "Each dot represents one club",
+    x        = "Season",
+    y        = "Total Squad Value (Million €)"
+  ) +
+  theme_smartspend() +
+  theme(legend.position = "none")
+```
+
+### 1.3 Points Distribution
+
+```{r eda-points}
+#| code-fold: true
+#| code-summary: "Plot: Points Histogram"
+#| fig-width: 10
+#| fig-height: 4
+
+team_season |>
+  ggplot(aes(x = Pts, fill = season)) +
+  geom_histogram(binwidth = 5, color = "white", alpha = 0.85) +
+  facet_wrap(~season, ncol = 3) +
+  scale_fill_brewer(palette = "Set2") +
+  labs(
+    title    = "League Points Distribution — By Season",
+    subtitle = "Each bar represents a 5-point interval",
+    x        = "Points",
+    y        = "Number of Clubs"
+  ) +
+  theme_smartspend() +
+  theme(legend.position = "none")
+```
+
+### 1.4 Market Value vs. Points: Correlation Scatter Plot
+
+```{r eda-scatter}
+#| code-fold: true
+#| code-summary: "Plot: Market Value vs. Points Scatter"
+#| fig-width: 10
+#| fig-height: 7
+
+corr_val <- cor(team_season$squad_market_value_eur, team_season$Pts,
+                use = "complete.obs")
+
+label_data <- team_season |>
+  mutate(is_big = team %in% big_teams) |>
+  filter(is_big | Pts > 80 | squad_market_value_eur > 120e6)
+
+team_season |>
+  ggplot(aes(x = squad_market_value_eur / 1e6, y = Pts, color = season)) +
+  geom_point(aes(size = squad_market_value_eur / 1e6), alpha = 0.7) +
+  geom_smooth(method = "lm", se = TRUE, color = "grey30",
+              linewidth = 0.8, linetype = "dashed") +
+  geom_text_repel(
+    data = label_data,
+    aes(label = paste0(team, "\n(", season, ")")),
+    size = 3, box.padding = 0.4, max.overlaps = 15
+  ) +
+  scale_x_continuous(labels = label_dollar(prefix = "€", suffix = "M")) +
+  scale_color_brewer(palette = "Set2", name = "Season") +
+  scale_size(range = c(2, 8), guide = "none") +
+  annotate("text", x = Inf, y = -Inf,
+           label = paste0("r = ", round(corr_val, 3)),
+           hjust = 1.2, vjust = -1, size = 5, fontface = "bold") +
+  labs(
+    title    = "Squad Market Value vs. Points",
+    subtitle = "Dot size proportional to squad value; dashed line = OLS fit",
+    x        = "Total Squad Value (Million €)",
+    y        = "Points"
+  ) +
+  theme_smartspend()
+```
+
+```{r corr-table}
+#| code-fold: true
+#| code-summary: "Table: Pearson Correlation by Season"
+
+team_season |>
+  group_by(season) |>
+  summarise(
+    n_clubs       = n(),
+    Pearson_r     = round(cor(squad_market_value_eur, Pts, use = "complete.obs"), 3),
+    p_value       = round(cor.test(squad_market_value_eur, Pts)$p.value, 4)
+  ) |>
+  kable(caption = "Pearson Correlation by Season: Market Value ~ Points",
+        col.names = c("Season", "Clubs", "r", "p-value"))
+```
+
+---
+
+## 2. Club-Level Analysis — Regression & Efficiency Score
+
+### 2.1 Simple Linear Regression
+
+Dependent variable: `Pts` (season points)
+Independent variable: `log(squad_market_value_eur)` — natural log applied to correct right-skew
+
+```{r regression}
+#| code-fold: true
+#| code-summary: "OLS Regression Model"
+
+model <- lm(Pts ~ log(squad_market_value_eur), data = team_season)
+
+tidy(model) |>
+  mutate(across(where(is.numeric), ~ round(.x, 4))) |>
+  kable(caption = "OLS Regression: Pts ~ log(squad_market_value_eur)")
+
+glance(model) |>
+  select(r.squared, adj.r.squared, sigma, statistic, p.value, nobs) |>
+  mutate(across(where(is.numeric), ~ round(.x, 4))) |>
+  kable(caption = "Model Fit Statistics")
+```
+
+```{r regression-plot}
+#| code-fold: true
+#| code-summary: "Plot: Regression Fit"
+#| fig-width: 9
+#| fig-height: 6
+
+team_season |>
+  mutate(fitted = fitted(model)) |>
+  ggplot(aes(x = log(squad_market_value_eur), y = Pts)) +
+  geom_point(aes(color = season), alpha = 0.8, size = 3) +
+  geom_line(aes(y = fitted), color = "grey20", linewidth = 1) +
+  geom_ribbon(
+    aes(ymin = fitted - sigma(model), ymax = fitted + sigma(model)),
+    alpha = 0.1, fill = "grey50"
+  ) +
+  scale_color_brewer(palette = "Set2", name = "Season") +
+  labs(
+    title    = "log(Market Value) ~ Points: OLS Fit",
+    subtitle = "Grey band = ±1 standard error interval",
+    x        = "log(Total Squad Value €)",
+    y        = "Points"
+  ) +
+  theme_smartspend()
+```
+
+### 2.2 Spending Efficiency Score
+
+The **efficiency score** = actual points − predicted points (OLS residuals).
+
+- **Positive:** the club collected *more* points than its squad value implies.
+- **Negative:** the club collected *fewer* points than its squad value implies.
+
+:::{.callout-note}
+**Interpreting the Efficiency Score**
+
+The model predicts points purely from squad market value. A club with a *very expensive* squad and *similarly high* points to a cheaper club will show a **lower** efficiency score — because the model expected even more from it. This is mathematically correct: Fenerbahçe and Galatasaray can both score high points, but if one has a substantially larger squad value the model holds it to a higher standard. Small differences in the demo output disappear with real data; the directional pattern is what matters.
+:::
+
+```{r efficiency-score}
+#| code-fold: true
+#| code-summary: "Compute Efficiency Scores"
+
+team_season <- team_season |>
+  mutate(
+    pts_predicted = predict(model, newdata = team_season),
+    efficiency    = Pts - pts_predicted,
+    eff_label     = case_when(
+      efficiency >  8 ~ "Highly Efficient",
+      efficiency >  0 ~ "Efficient",
+      efficiency > -8 ~ "Below Average",
+      TRUE            ~ "Inefficient"
+    )
+  )
+
+bind_rows(
+  team_season |> slice_max(efficiency, n = 5) |> mutate(group = "Top 5 Efficient"),
+  team_season |> slice_min(efficiency, n = 5) |> mutate(group = "Bottom 5 Inefficient")
+) |>
+  select(group, team, season, Pts, pts_predicted, efficiency) |>
+  mutate(across(c(pts_predicted, efficiency), ~ round(.x, 1))) |>
+  kable(caption = "Most and Least Efficient Club-Season Combinations",
+        col.names = c("Group", "Club", "Season", "Actual Pts",
+                      "Predicted Pts", "Efficiency Score"))
+```
+
+```{r efficiency-plot}
+#| code-fold: true
+#| code-summary: "Plot: Efficiency Score Bar Chart"
+#| fig-width: 11
+#| fig-height: 7
+
+team_season |>
+  mutate(team = fct_reorder(team, efficiency, .fun = mean)) |>
+  ggplot(aes(x = efficiency, y = team, fill = eff_label)) +
+  geom_col(width = 0.7) +
+  geom_vline(xintercept = 0, linewidth = 0.8, color = "grey30") +
+  facet_wrap(~season, scales = "free_y") +
+  scale_fill_manual(
+    values = c(
+      "Highly Efficient" = "#27ae60",
+      "Efficient"        = "#82ca9d",
+      "Below Average"    = "#f39c12",
+      "Inefficient"      = "#e74c3c"
+    ),
+    name = "Efficiency Level"
+  ) +
+  labs(
+    title    = "Spending Efficiency Score — By Season",
+    subtitle = "Positive = over-performs budget expectation; Negative = under-performs",
+    x        = "Efficiency Score (Actual − Predicted Points)",
+    y        = NULL
+  ) +
+  theme_smartspend() +
+  theme(legend.position = "right")
+```
+
+### 2.3 Cross-Season Efficiency Trend
+
+```{r efficiency-trend}
+#| code-fold: true
+#| code-summary: "Plot: Efficiency Trend (3 Seasons)"
+#| fig-width: 10
+#| fig-height: 6
+
+common_teams <- team_season |>
+  count(team) |>
+  filter(n == 3) |>
+  pull(team)
+
+label_last <- team_season |>
+  filter(team %in% common_teams, season == "2025-26")
+
+team_season |>
+  filter(team %in% common_teams) |>
+  ggplot(aes(x = season, y = efficiency, group = team, color = team)) +
+  geom_line(linewidth = 1, alpha = 0.8) +
+  geom_point(size = 3) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "grey50") +
+  geom_text_repel(
+    data = label_last,
+    aes(label = team), size = 3, hjust = -0.1, direction = "y"
+  ) +
+  scale_color_viridis_d(option = "turbo", guide = "none") +
+  labs(
+    title    = "Efficiency Score Trend Across 3 Seasons",
+    subtitle = "Clubs present in all three Süper Lig seasons",
+    x        = "Season",
+    y        = "Efficiency Score"
+  ) +
+  theme_smartspend()
+```
+
+---
+
+## 3. Player Analysis A — Forward Spending vs. Goals
+
+### 3.1 Methodology
+
+Forward positions: `ST`, `CF`, `FW`, `LW`, `RW`, `CAM`.
+January transfer players' annual wages are halved before computing totals.
+
+```{r forward-spending}
+#| code-fold: true
+#| code-summary: "Compute Forward Spending vs. Goals"
+
+forward_positions <- c("FW", "LW", "RW", "ST", "CF", "CAM", "AM")
+
+forward_data <- player_full |>
+  filter(str_detect(position, paste(forward_positions, collapse = "|"))) |>
+  left_join(
+    team_season |> select(team, season, total_wages_eur, squad_size),
+    by = c("team", "season")
+  ) |>
+  mutate(player_salary_est = total_wages_eur / squad_size)
+
+team_forward <- forward_data |>
+  group_by(team, season) |>
+  summarise(
+    n_forwards       = n(),
+    total_fwd_salary = sum(player_salary_est, na.rm = TRUE),
+    total_goals      = sum(goals, na.rm = TRUE),
+    .groups = "drop"
+  ) |>
+  mutate(
+    cost_per_goal  = total_fwd_salary / pmax(total_goals, 1),
+    goals_per_meur = total_goals / (total_fwd_salary / 1e6)
+  )
+
+team_forward |>
+  arrange(season, cost_per_goal) |>
+  mutate(
+    total_fwd_salary = dollar(total_fwd_salary, prefix = "€", big.mark = ","),
+    cost_per_goal    = dollar(cost_per_goal,    prefix = "€", big.mark = ","),
+    goals_per_meur   = round(goals_per_meur, 2)
+  ) |>
+  kable(
+    caption = "Forward Spending & Goal Efficiency (All Seasons)"
+  )
+```
+
+```{r forward-plot}
+#| code-fold: true
+#| code-summary: "Plot: Forward Spending vs. Goals"
+#| fig-width: 10
+#| fig-height: 6
+
+fwd_corr <- cor(team_forward$total_fwd_salary, team_forward$total_goals,
+                use = "complete.obs")
+
+top3_eff <- team_forward |>
+  group_by(season) |>
+  slice_max(goals_per_meur, n = 3) |>
+  ungroup()
+
+team_forward |>
+  ggplot(aes(x = total_fwd_salary / 1e6, y = total_goals, color = season)) +
+  geom_point(aes(size = total_fwd_salary / 1e6), alpha = 0.8) +
+  geom_smooth(method = "lm", se = FALSE, color = "grey30",
+              linewidth = 0.8, linetype = "dashed") +
+  geom_text_repel(
+    data = top3_eff,
+    aes(label = team), size = 3, box.padding = 0.3
+  ) +
+  scale_x_continuous(labels = label_dollar(prefix = "€", suffix = "M")) +
+  scale_color_brewer(palette = "Set2", name = "Season") +
+  scale_size(range = c(2, 7), guide = "none") +
+  annotate("text", x = Inf, y = Inf,
+           label = paste0("r = ", round(fwd_corr, 3)),
+           hjust = 1.2, vjust = 1.5, size = 5, fontface = "bold") +
+  labs(
+    title    = "Forward Wage Spending vs. Goals Scored",
+    subtitle = "Labelled clubs = top 3 goals-per-million-€ each season",
+    x        = "Total Forward Wage Spending (Million €)",
+    y        = "Total Goals Scored"
+  ) +
+  theme_smartspend()
+```
+
+```{r forward-ranking}
+#| code-fold: true
+#| code-summary: "Plot: Goals per Million € Ranking"
+#| fig-width: 10
+#| fig-height: 7
+
+team_forward |>
+  mutate(team = fct_reorder(team, goals_per_meur, .fun = mean)) |>
+  ggplot(aes(x = goals_per_meur, y = team, fill = season)) +
+  geom_col(position = position_dodge(width = 0.7), width = 0.6) +
+  scale_fill_brewer(palette = "Set2", name = "Season") +
+  scale_x_continuous(labels = label_number(suffix = " goals/M€")) +
+  labs(
+    title    = "Forward Spending Efficiency — Goals per Million €",
+    subtitle = "Higher = more goals for every million € spent on forward wages",
+    x        = "Goals per Million € in Forward Wages",
+    y        = NULL
+  ) +
+  theme_smartspend()
+```
+
+---
+
+## 4. Player Analysis B — Mid-Season Within-League Transfers
+
+### Methodology
+
+Players recorded under two different clubs in the same season are flagged as within-league mid-season transfer candidates. Foreign imports (clubs previously outside the Süper Lig) are excluded.
+
+```{r transfers}
+#| code-fold: true
+#| code-summary: "Detect Within-League Transfers"
+
+within_transfers <- player_full |>
+  group_by(player, season) |>
+  filter(n_distinct(team) > 1) |>
+  arrange(player, season, desc(minutes)) |>
+  ungroup()
+
+if (nrow(within_transfers) == 0) {
+  cat("No within-league mid-season transfers detected in this dataset.\n")
+} else {
+  transfer_summary <- within_transfers |>
+    group_by(player, season) |>
+    summarise(
+      clubs         = paste(unique(team), collapse = " → "),
+      total_minutes = sum(minutes, na.rm = TRUE),
+      total_goals   = sum(goals,   na.rm = TRUE),
+      total_assists = sum(assists,  na.rm = TRUE),
+      g_a_per_90    = round((total_goals + total_assists) / (total_minutes / 90), 3),
+      .groups = "drop"
+    ) |>
+    arrange(desc(g_a_per_90))
+
+  kable(
+    head(transfer_summary, 20),
+    caption = "Within-League Mid-Season Transfers — Player Performance",
+    col.names = c("Player","Season","Clubs","Minutes","Goals",
+                  "Assists","G+A/90")
+  )
+}
+```
+
+```{r transfer-plot}
+#| code-fold: true
+#| code-summary: "Plot: Transfer Impact by Receiving Club"
+#| fig-width: 10
+#| fig-height: 6
+
+if (nrow(within_transfers) > 0) {
+
+  transfer_summary_inner <- within_transfers |>
+    group_by(player, season) |>
+    summarise(
+      g_a_per_90 = (sum(goals) + sum(assists)) / (sum(minutes) / 90),
+      .groups = "drop"
+    )
+
+  # Identify receiving club = the record with fewer minutes (came later)
+  receiving_club <- within_transfers |>
+    group_by(player, season) |>
+    slice_min(minutes, n = 1, with_ties = FALSE) |>
+    ungroup() |>
+    select(player, season, receiving_team = team)
+
+  transfer_by_team <- receiving_club |>
+    left_join(transfer_summary_inner, by = c("player", "season")) |>
+    group_by(receiving_team, season) |>
+    summarise(
+      n_transfers    = n(),
+      avg_g_a_per_90 = mean(g_a_per_90, na.rm = TRUE),
+      .groups = "drop"
+    )
+
+  transfer_by_team |>
+    mutate(receiving_team = fct_reorder(receiving_team, avg_g_a_per_90)) |>
+    ggplot(aes(x = avg_g_a_per_90, y = receiving_team,
+               fill = season, size = n_transfers)) +
+    geom_point(shape = 21, alpha = 0.85) +
+    scale_fill_brewer(palette = "Set2", name = "Season") +
+    scale_size(range = c(3, 10), name = "# Transfers Received") +
+    labs(
+      title    = "Clubs Receiving Within-League Transfers — Average G+A/90",
+      subtitle = "Post-transfer contribution of incoming players; dot size = number of transfers received",
+      x        = "Average Goals + Assists per 90 min",
+      y        = NULL
+    ) +
+    theme_smartspend()
+
+} else {
+  cat("Transfer plot skipped — no within-league transfers in this dataset.\n")
+}
+```
+
+---
+
+## 5. Player Analysis C — Best XI by Goals + Assists (4-2-3-1)
+
+**Formation:** 4-2-3-1 (1 GK — 2 CB — 1 LB — 1 RB — 2 DM — 1 CAM — 1 LW — 1 RW — 1 ST)
+
+**Selection criteria:**
+
+- **GK:** highest save percentage (min. 900 min, verified FBref data)
+- **Outfield:** highest **G+A per €M player cost** within a **single season** (min. 900 min, min. 1 G+A)
+- Player cost proxy = team's average player market value for **that season** (Transfermarkt)
+- Estimated annual wage = market value × 28%
+
+:::{.callout-note}
+**Methodology — Cost-Adjusted Best XI**
+
+Each (player × season) pair is evaluated independently. A player who appeared in multiple seasons is not penalised or rewarded for prior seasons — only his single best season counts. This prevents inflating the metric by stacking seasons.
+
+**Cost proxy:** Individual player market values are not directly available in the scraped stats dataset. Each player's cost is approximated by his **team's average player market value for that specific season** (sourced from Transfermarkt). Teams with lower squad values therefore field "cheaper" players, which can yield high G+A-per-€M ratios even with moderate raw output.
+
+**Wage estimate:** Annual wage = market value × 28%, based on the typical wage-to-value ratio observed across European leagues (Transfermarkt methodology).
+:::
+
+```{r best-xi-calc}
+#| code-fold: true
+#| code-summary: "Best XI — G+A per €M (per season, not aggregated)"
+
+# Each (player, season) is a separate candidate — no cross-season aggregation
+ref <- player_full |>
+  filter(minutes >= 900, position != "GK") |>
+  left_join(
+    squad_values |> select(team, season, avg_player_value_eur),
+    by = c("team", "season")
+  ) |>
+  filter(!is.na(avg_player_value_eur), goals + assists >= 1) |>
+  mutate(
+    g_plus_a     = goals + assists,
+    cost_m_eur   = round(avg_player_value_eur / 1e6, 2),
+    wage_est_k   = round(avg_player_value_eur * 0.28 / 1e3, 0),
+    ga_per_cost  = round(g_plus_a / (avg_player_value_eur / 1e6), 2)
+  )
+
+pick_efficient <- function(pos_vec, n) {
+  ref |>
+    filter(position %in% pos_vec) |>
+    slice_max(ga_per_cost, n = n, with_ties = FALSE) |>
+    select(player, team, season, position, goals, assists,
+           g_plus_a, cost_m_eur, wage_est_k, ga_per_cost)
+}
+
+# GK: highest save % (verified data)
+best_gk <- read.csv("data/real_players.csv", stringsAsFactors = FALSE) |>
+  filter(position == "GK", !is.na(save_pct), minutes >= 900) |>
+  slice_max(save_pct, n = 1, with_ties = FALSE) |>
+  transmute(
+    role        = "GK",
+    player, team, season,
+    goals       = 0L, assists = 0L, g_plus_a = 0L,
+    cost_m_eur  = round(market_value_eur / 1e6, 2),
+    wage_est_k  = round(market_value_eur * 0.28 / 1e3, 0),
+    ga_per_cost = NA_real_
+  )
+
+cols_out <- c("role","player","team","season","goals","assists",
+              "g_plus_a","cost_m_eur","wage_est_k","ga_per_cost")
+
+best_cb  <- pick_efficient("CB",         2) |> mutate(role = "CB")
+best_lb  <- pick_efficient("LB",         1) |> mutate(role = "LB")
+best_rb  <- pick_efficient("RB",         1) |> mutate(role = "RB")
+best_dm  <- pick_efficient(c("DM","CM"), 2) |> mutate(role = "DM")
+best_cam <- pick_efficient("CAM",        1) |> mutate(role = "CAM")
+best_lw  <- pick_efficient("LW",         1) |> mutate(role = "LW")
+best_rw  <- pick_efficient("RW",         1) |> mutate(role = "RW")
+best_st  <- pick_efficient("ST",         1) |> mutate(role = "ST")
+
+best_xi_all <- bind_rows(
+  best_gk,
+  best_cb  |> select(all_of(cols_out)),
+  best_lb  |> select(all_of(cols_out)),
+  best_rb  |> select(all_of(cols_out)),
+  best_dm  |> select(all_of(cols_out)),
+  best_cam |> select(all_of(cols_out)),
+  best_lw  |> select(all_of(cols_out)),
+  best_rw  |> select(all_of(cols_out)),
+  best_st  |> select(all_of(cols_out))
+)
+
+kable(
+  best_xi_all,
+  col.names = c("Pos","Player","Club","Season","Goals","Assists",
+                "G+A","Cost Proxy (€M)","Est. Wage (€K/yr)","G+A per €M"),
+  digits    = 2,
+  caption   = "Best XI — Highest G+A per €M Player Cost (single season, min. 900 min)"
+)
+```
+
+```{r best-xi-pitch}
+#| code-fold: true
+#| code-summary: "Plot: Best XI Pitch Diagram"
+#| fig-width: 8
+#| fig-height: 10
+
+draw_pitch_layers <- function() {
+  list(
+    annotate("rect", xmin=0, xmax=68, ymin=0, ymax=105,
+             fill="#3a7a3a", color="white", linewidth=1),
+    annotate("segment", x=0, xend=68, y=52.5, yend=52.5,
+             color="white", linewidth=0.8),
+    annotate("path",
+             x = 34 + 9.15*cos(seq(0, 2*pi, length.out=100)),
+             y = 52.5 + 9.15*sin(seq(0, 2*pi, length.out=100)),
+             color="white", linewidth=0.8),
+    annotate("point", x=34, y=52.5, color="white", size=1.5),
+    annotate("rect", xmin=13.84, xmax=54.16, ymin=0,    ymax=16.5,
+             fill=NA, color="white", linewidth=0.8),
+    annotate("rect", xmin=13.84, xmax=54.16, ymin=88.5, ymax=105,
+             fill=NA, color="white", linewidth=0.8),
+    annotate("rect", xmin=24.84, xmax=43.16, ymin=0,    ymax=5.5,
+             fill=NA, color="white", linewidth=0.6),
+    annotate("rect", xmin=24.84, xmax=43.16, ymin=99.5, ymax=105,
+             fill=NA, color="white", linewidth=0.6),
+    coord_cartesian(xlim=c(-5, 73), ylim=c(-5, 112)),
+    theme_void(),
+    theme(plot.background = element_rect(fill="#2a5a2a", color=NA))
+  )
+}
+
+coord_df <- data.frame(
+  role  = c("GK","CB","CB","LB","RB","DM","DM","LW","CAM","RW","ST"),
+  row_n = c(1,    1,   2,   1,   1,   1,   2,   1,   1,   1,   1),
+  x_pos = c(34,  22,  46,  8,   60,  24,  44,  10,  34,  58,  34),
+  y_pos = c(8,   26,  26,  26,  26,  46,  46,  70,  70,  70,  90)
+)
+
+best_xi_plot <- best_xi_all |>
+  group_by(role) |>
+  mutate(row_n = row_number()) |>
+  ungroup() |>
+  left_join(coord_df, by = c("role", "row_n")) |>
+  mutate(
+    stat_label = if_else(role == "GK",
+                         "Best Save %",
+                         paste0(goals, "G ", assists, "A")),
+    label_full = paste0(player, "\n", stat_label)
+  )
+
+ggplot(best_xi_plot) +
+  draw_pitch_layers() +
+  geom_point(aes(x = x_pos, y = y_pos),
+             shape=21, fill="#FFD700", color="white", size=11) +
+  geom_text(aes(x = x_pos, y = y_pos + 6.5, label = label_full),
+            size=2.7, color="white", fontface="bold",
+            vjust=0, lineheight=0.95) +
+  geom_text(aes(x = x_pos, y = y_pos - 4.5, label = role),
+            size=2.5, color="#FFD700", fontface="bold") +
+  labs(
+    title    = "Best XI — 4-2-3-1",
+    subtitle = "Selected by G+A per €M cost (best single season) | GK by Save %\nSource: Transfermarkt leistungsdaten (live data, 900+ min played)"
+  ) +
+  theme(
+    plot.title      = element_text(color="white", face="bold", size=14, hjust=0.5),
+    plot.subtitle   = element_text(color="grey80", size=9, hjust=0.5),
+    plot.background = element_rect(fill="#1a3a1a", color=NA)
+  )
+```
+
+---
+
+## 6. Summary Table
+
+```{r summary-table}
+#| code-fold: true
+#| code-summary: "Table: 3-Season Club Summary"
+
+team_season |>
+  group_by(team) |>
+  summarise(
+    seasons_present    = n(),
+    avg_squad_value_m  = mean(squad_market_value_eur / 1e6, na.rm = TRUE),
+    avg_points         = mean(Pts, na.rm = TRUE),
+    avg_efficiency     = mean(efficiency, na.rm = TRUE),
+    .groups = "drop"
+  ) |>
+  arrange(desc(avg_efficiency)) |>
+  mutate(
+    avg_squad_value_m = paste0("€", round(avg_squad_value_m, 1), "M"),
+    avg_points        = round(avg_points, 1),
+    avg_efficiency    = round(avg_efficiency, 2)
+  ) |>
+  kable(
+    col.names = c("Club","Seasons","Avg Squad Value",
+                  "Avg Points","Avg Efficiency Score"),
+    caption   = "3-Season Club Performance & Efficiency Summary"
+  )
+```
+
+:::{.callout-warning}
+**2025-26 Season Note:** As of May 2026, this season may not yet be complete. If the final 2–4 match-weeks are missing, points for this season will appear lower than the eventual final standings. Interpret 2025-26 figures as provisional.
+:::

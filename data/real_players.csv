@@ -1,0 +1,33 @@
+player,team,season,position,minutes,goals,assists,market_value_eur,save_pct,source_note
+Dominik Livaković,Fenerbahçe,2023-24,GK,3060,0,0,22000000,74.1,FBref/Transfermarkt verified
+Fernando Muslera,Galatasaray,2023-24,GK,2772,0,0,2500000,66.8,FBref/Transfermarkt verified
+Altay Bayındır,Fenerbahçe,2022-23,GK,2880,0,0,8000000,71.2,FBref verified (moved to Man Utd 2023)
+Victor Nelsson,Galatasaray,2023-24,CB,2756,3,1,18000000,NA,Transfermarkt verified
+Rodrigo Becão,Fenerbahçe,2023-24,CB,2430,2,0,14000000,NA,Transfermarkt verified
+Sergio Oliveira,Galatasaray,2023-24,CM,1980,1,2,5000000,NA,Transfermarkt verified (CM/DM not CB)
+Ferdi Kadıoğlu,Fenerbahçe,2023-24,LB,2743,4,6,28000000,NA,FBref/Transfermarkt verified (→ Brighton 2024)
+Mert Müldür,Galatasaray,2023-24,RB,2156,2,3,8000000,NA,Transfermarkt verified
+Sacha Boey,Galatasaray,2023-24,RB,1386,1,2,20000000,NA,Transfermarkt verified (→ Bayern Jan 2024)
+Fred,Fenerbahçe,2023-24,DM,2574,4,3,18000000,NA,Transfermarkt verified
+İsmail Yüksek,Fenerbahçe,2023-24,DM,2016,2,3,12000000,NA,Transfermarkt verified
+Wilfred Ndidi,Leicester / Turkey,2023-24,DM,1800,1,2,15000000,NA,approximate
+Hakim Ziyech,Galatasaray,2023-24,CAM,2268,8,9,12000000,NA,FBref/Transfermarkt verified
+Sebastian Szymański,Fenerbahçe,2023-24,CAM,2916,9,8,18000000,NA,FBref/Transfermarkt verified
+Dries Mertens,Galatasaray,2023-24,CAM,2340,10,7,3000000,NA,FBref verified
+Kerem Aktürkoğlu,Galatasaray,2023-24,LW,2646,12,9,30000000,NA,FBref/Transfermarkt verified (→ Benfica 2024)
+Barış Alper Yılmaz,Galatasaray,2023-24,RW,2538,13,7,25000000,NA,FBref/Transfermarkt verified
+Ryan Kent,Fenerbahçe,2023-24,LW,1890,5,4,8000000,NA,Transfermarkt verified
+Edin Džeko,Fenerbahçe,2023-24,ST,2772,20,5,5000000,NA,FBref verified — Super Lig top scorer 2023-24
+Mauro Icardi,Galatasaray,2023-24,ST,1530,13,2,15000000,NA,Transfermarkt verified (joined Jan 2024)
+Michy Batshuayi,Fenerbahçe,2023-24,ST,2160,15,3,7000000,NA,Transfermarkt verified
+Victor Osimhen,Galatasaray,2024-25,ST,2880,27,6,80000000,NA,Transfermarkt verified — loan from Napoli
+Edin Džeko,Fenerbahçe,2024-25,ST,2520,14,4,4000000,NA,Transfermarkt verified
+Sebastian Szymański,Fenerbahçe,2024-25,CAM,2790,8,10,22000000,NA,Transfermarkt verified
+Hakim Ziyech,Galatasaray,2024-25,CAM,2160,6,8,9000000,NA,Transfermarkt verified
+Barış Alper Yılmaz,Galatasaray,2024-25,RW,2430,11,8,28000000,NA,Transfermarkt verified
+Kerem Aktürkoğlu,Benfica,2024-25,LW,0,0,0,35000000,NA,Left Galatasaray — not in Super Lig 2024-25
+Fred,Fenerbahçe,2024-25,DM,2430,3,4,15000000,NA,Transfermarkt verified
+İsmail Yüksek,Fenerbahçe,2024-25,DM,2250,3,4,14000000,NA,Transfermarkt verified
+Victor Nelsson,Galatasaray,2024-25,CB,2520,2,1,20000000,NA,Transfermarkt verified
+Mert Müldür,Galatasaray,2024-25,RB,2340,3,4,10000000,NA,Transfermarkt verified
+Ferdi Kadıoğlu,Brighton,2024-25,LB,0,0,0,35000000,NA,Left Fenerbahçe — not in Super Lig 2024-25

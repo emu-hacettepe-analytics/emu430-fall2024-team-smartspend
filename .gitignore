@@ -1,0 +1,20 @@
+.Rproj.user
+.Rhistory
+.Ruserdata
+.DS_Store
+
+/.quarto/
+_freeze/
+_site/
+
+# Quarto cache & intermediate files
+analysis_cache/
+data_cache/
+analysis_files/
+data_files/
+
+# Ham veri — superlig_final.RData commit edilir, raw dosyalar edilmez
+data/raw_*.RData
+data/player_values_raw.RData
+
+**/*.quarto_ipynb

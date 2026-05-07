@@ -1,0 +1,43 @@
+project:
+  type: website
+  output-dir: docs
+
+website:
+  title: "SmartSpend"
+  navbar:
+    search: true
+    left:
+      - text: Home
+        href: index.qmd
+      - text: Data
+        href: data.qmd
+      - text: Analysis
+        href: analysis.qmd
+    tools:
+      - icon: github
+        href: https://github.com/emu-hacettepe-analytics/emu430-fall2024-emu430-fall2024-team-emu430-project-quarto-template
+
+  page-navigation: true
+  back-to-top-navigation: true
+  page-footer:
+    center: "Hacettepe IE — EMU 430 — Fall 2024 | SmartSpend"
+    border: true
+
+format:
+  html:
+    toc: true
+    toc-location: left
+    theme:
+      light: simplex
+      dark: cyborg
+    css: styles.css
+    code-fold: true
+    code-tools: true
+    code-summary: "Kodu Göster / Gizle"
+
+execute:
+  warning: false
+  message: false
+  cache: true
+
+editor: visual
