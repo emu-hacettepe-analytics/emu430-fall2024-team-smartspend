@@ -14,8 +14,9 @@ Player market values from Transfermarkt and wage data from Capology.com were com
 
 ## Team Members — SmartSpend
 
-1.  Saltuk Buğrahan Taşdemir-
-2.  Kerem Berkalp Çerekçi-<https://emu-hacettepe-analytics.github.io/emu430-spring2026-kerembcerekci/project.html>
+1. [Saltuk Buğrahan Taşdemir](https://emu-hacettepe-analytics.github.io/emu430-spring2026-saltuktasdemir/)
+
+2. [Kerem Berkalp Çerekçi](https://emu-hacettepe-analytics.github.io/emu430-spring2026-kerembcerekci/)
 
 ------------------------------------------------------------------------
 
