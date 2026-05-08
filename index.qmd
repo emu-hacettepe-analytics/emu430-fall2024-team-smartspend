@@ -66,3 +66,7 @@ flowchart LR
     E --> H[Player-Level\nAnalyses]
     E --> I[Best XI\nSelection]
 ```
+
+
+[SmartSpend Project](https://emu-hacettepe-analytics.github.io/emu430-fall2024-team-smartspend/)
+

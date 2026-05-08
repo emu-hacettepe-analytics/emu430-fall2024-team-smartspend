@@ -88,7 +88,7 @@
     "href": "index.html#methodology-overview",
     "title": "SmartSpend",
     "section": "Methodology Overview",
-    "text": "Methodology Overview\n\n\n\n\n\nflowchart LR\n    A[Transfermarkt\\nMarket Values] --&gt; D[Cleaning &\\nMerging]\n    B[FBref\\nLeague Stats] --&gt; D\n    C[Capology\\nWage Data] --&gt; D\n    D --&gt; E[superlig_final.RData]\n    E --&gt; F[EDA &\\nVisualization]\n    E --&gt; G[Regression &\\nEfficiency Score]\n    E --&gt; H[Player-Level\\nAnalyses]\n    E --&gt; I[Best XI\\nSelection]"
+    "text": "Methodology Overview\n\n\n\n\n\nflowchart LR\n    A[Transfermarkt\\nMarket Values] --&gt; D[Cleaning &\\nMerging]\n    B[FBref\\nLeague Stats] --&gt; D\n    C[Capology\\nWage Data] --&gt; D\n    D --&gt; E[superlig_final.RData]\n    E --&gt; F[EDA &\\nVisualization]\n    E --&gt; G[Regression &\\nEfficiency Score]\n    E --&gt; H[Player-Level\\nAnalyses]\n    E --&gt; I[Best XI\\nSelection]\n\n\n\n\n\n\nSmartSpend Project"
   },
   {
     "objectID": "analysis.html",
