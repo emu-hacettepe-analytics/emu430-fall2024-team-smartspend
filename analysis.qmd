@@ -4,17 +4,17 @@ title: "Analysis"
 
 ## Key Takeaways
 
-:::{.callout-important}
+::: callout-important
 **Core Findings — Quick Summary**
 
-1. Squad market value and final points are positively correlated at **r ≈ 0.72**, confirming that budget matters — but imperfectly.
-2. **Galatasaray** consistently leads the efficiency ranking among big-budget clubs across all three seasons.
-3. **Sivasspor and Kasımpaşa** collected 15–25 % more points than the regression model predicted, highlighting exceptional value extraction.
-4. **Forward wage spending and goal output** are only weakly correlated (r ≈ 0.45) — expensive strikers are not a guaranteed route to goals.
-5. The **Best XI by salary-to-performance ratio** is composed almost entirely of players from mid-tier clubs, challenging the "star player = efficient investment" assumption.
+1.  Squad market value and final points are positively correlated at **r ≈ 0.72**, confirming that budget matters — but imperfectly.
+2.  **Galatasaray** consistently leads the efficiency ranking among big-budget clubs across all three seasons.
+3.  **Sivasspor and Kasımpaşa** collected 15–25 % more points than the regression model predicted, highlighting exceptional value extraction.
+4.  **Forward wage spending and goal output** are only weakly correlated (r ≈ 0.45) — expensive strikers are not a guaranteed route to goals.
+5.  The **Best XI by salary-to-performance ratio** is composed almost entirely of players from mid-tier clubs, challenging the "star player = efficient investment" assumption.
 :::
 
----
+------------------------------------------------------------------------
 
 ```{r setup}
 #| code-fold: true
@@ -54,7 +54,7 @@ big_teams <- c("Galatasaray", "Fenerbahçe", "Beşiktaş", "Trabzonspor", "Başa
 load("data/superlig_final.RData")
 ```
 
----
+------------------------------------------------------------------------
 
 ## 1. Exploratory Data Analysis (EDA)
 
@@ -184,14 +184,13 @@ team_season |>
         col.names = c("Season", "Clubs", "r", "p-value"))
 ```
 
----
+------------------------------------------------------------------------
 
 ## 2. Club-Level Analysis — Regression & Efficiency Score
 
 ### 2.1 Simple Linear Regression
 
-Dependent variable: `Pts` (season points)
-Independent variable: `log(squad_market_value_eur)` — natural log applied to correct right-skew
+Dependent variable: `Pts` (season points) Independent variable: `log(squad_market_value_eur)` — natural log applied to correct right-skew
 
 ```{r regression}
 #| code-fold: true
@@ -238,10 +237,10 @@ team_season |>
 
 The **efficiency score** = actual points − predicted points (OLS residuals).
 
-- **Positive:** the club collected *more* points than its squad value implies.
-- **Negative:** the club collected *fewer* points than its squad value implies.
+-   **Positive:** the club collected *more* points than its squad value implies.
+-   **Negative:** the club collected *fewer* points than its squad value implies.
 
-:::{.callout-note}
+::: callout-note
 **Interpreting the Efficiency Score**
 
 The model predicts points purely from squad market value. A club with a *very expensive* squad and *similarly high* points to a cheaper club will show a **lower** efficiency score — because the model expected even more from it. This is mathematically correct: Fenerbahçe and Galatasaray can both score high points, but if one has a substantially larger squad value the model holds it to a higher standard. Small differences in the demo output disappear with real data; the directional pattern is what matters.
@@ -341,14 +340,13 @@ team_season |>
   theme_smartspend()
 ```
 
----
+------------------------------------------------------------------------
 
 ## 3. Player Analysis A — Forward Spending vs. Goals
 
 ### 3.1 Methodology
 
-Forward positions: `ST`, `CF`, `FW`, `LW`, `RW`, `CAM`.
-January transfer players' annual wages are halved before computing totals.
+Forward positions: `ST`, `CF`, `FW`, `LW`, `RW`, `CAM`. January transfer players' annual wages are halved before computing totals.
 
 ```{r forward-spending}
 #| code-fold: true
@@ -448,7 +446,7 @@ team_forward |>
   theme_smartspend()
 ```
 
----
+------------------------------------------------------------------------
 
 ## 4. Player Analysis B — Mid-Season Within-League Transfers
 
@@ -541,7 +539,7 @@ if (nrow(within_transfers) > 0) {
 }
 ```
 
----
+------------------------------------------------------------------------
 
 ## 5. Player Analysis C — Best XI by Goals + Assists (4-2-3-1)
 
@@ -549,12 +547,12 @@ if (nrow(within_transfers) > 0) {
 
 **Selection criteria:**
 
-- **GK:** highest save percentage (min. 900 min, verified FBref data)
-- **Outfield:** highest **G+A per €M player cost** within a **single season** (min. 900 min, min. 1 G+A)
-- Player cost proxy = team's average player market value for **that season** (Transfermarkt)
-- Estimated annual wage = market value × 28%
+-   **GK:** highest save percentage (min. 900 min, verified FBref data)
+-   **Outfield:** highest **G+A per €M player cost** within a **single season** (min. 900 min, min. 1 G+A)
+-   Player cost proxy = team's average player market value for **that season** (Transfermarkt)
+-   Estimated annual wage = market value × 28%
 
-:::{.callout-note}
+::: callout-note
 **Methodology — Cost-Adjusted Best XI**
 
 Each (player × season) pair is evaluated independently. A player who appeared in multiple seasons is not penalised or rewarded for prior seasons — only his single best season counts. This prevents inflating the metric by stacking seasons.
@@ -707,7 +705,7 @@ ggplot(best_xi_plot) +
   )
 ```
 
----
+------------------------------------------------------------------------
 
 ## 6. Summary Table
 
@@ -737,6 +735,6 @@ team_season |>
   )
 ```
 
-:::{.callout-warning}
+::: callout-warning
 **2025-26 Season Note:** As of May 2026, this season may not yet be complete. If the final 2–4 match-weeks are missing, points for this season will appear lower than the eventual final standings. Interpret 2025-26 figures as provisional.
 :::
