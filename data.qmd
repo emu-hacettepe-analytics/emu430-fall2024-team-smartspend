@@ -8,26 +8,26 @@ title: "Data"
 
 [Transfermarkt](https://www.transfermarkt.com) is the most comprehensive platform for tracking football player market values, updated regularly by a community of football analysts. Player-level market values for all Turkish Süper Lig clubs across the 2023-24, 2024-25, and 2025-26 seasons were retrieved via the `worldfootballR` R package.
 
-- **Currency:** Euro (€)
-- **Coverage:** All registered players per season (~400–500 players/season)
-- **Key Variables:** `squad_name`, `player_name`, `player_position`, `player_market_value_euro`
+-   **Currency:** Euro (€)
+-   **Coverage:** All registered players per season (\~400–500 players/season)
+-   **Key Variables:** `squad_name`, `player_name`, `player_position`, `player_market_value_euro`
 
 ### 2. FBref — League Table & Player Statistics
 
 [FBref](https://fbref.com) provides detailed football statistics powered by StatsBomb data. Both club-level standings (W, D, L, GF, GA, GD, Pts) and player-level statistics (goals, assists, minutes played, position, goalkeeper save percentage) were collected here.
 
-- **Coverage:** 3 seasons, ~20 clubs/season, all registered players
-- **Key Variables:** `Squad`, `W`, `D`, `L`, `GF`, `GA`, `GD`, `Pts`, `Player`, `Pos`, `Min`, `Gls`, `Ast`, `Save%`
+-   **Coverage:** 3 seasons, \~20 clubs/season, all registered players
+-   **Key Variables:** `Squad`, `W`, `D`, `L`, `GF`, `GA`, `GD`, `Pts`, `Player`, `Pos`, `Min`, `Gls`, `Ast`, `Save%`
 
 ### 3. Capology — Wage Data
 
 [Capology.com](https://www.capology.com) aggregates club-level wage bill data. The `worldfootballR` function `capology_club_wage_data()` was used to retrieve Turkish Süper Lig clubs' total annual wage expenditures.
 
-- **Currency:** Euro (€), annualised
-- **Important:** January (winter transfer window) arrivals have their annual wage **halved** before inclusion in team totals.
-- **Coverage:** Club-level total wage bill per season
+-   **Currency:** Euro (€), annualised
+-   **Important:** January (winter transfer window) arrivals have their annual wage **halved** before inclusion in team totals.
+-   **Coverage:** Club-level total wage bill per season
 
----
+------------------------------------------------------------------------
 
 ## Data Collection Code
 
@@ -136,7 +136,7 @@ raw_wages <- bind_rows(compact(list(wages_2324, wages_2425, wages_2526)))
 save(raw_wages, file="data/raw_wages.RData")
 ```
 
----
+------------------------------------------------------------------------
 
 ## Preprocessing Steps
 
@@ -184,29 +184,29 @@ save(team_season, player_full, gk_clean, squad_values,
      file = "data/superlig_final.RData")
 ```
 
----
+------------------------------------------------------------------------
 
 ## Data Limitations
 
-:::{.callout-warning}
+::: callout-warning
 **2025-26 Season — Incomplete Data**
 
 As of May 2026, the 2025-26 season may not yet be finished. The final 2–4 match-weeks could be missing, causing points and player statistics for this season to appear lower than the final standings. This limitation is flagged throughout the Analysis page wherever 2025-26 figures are discussed.
 :::
 
-:::{.callout-note}
+::: callout-note
 **Capology Coverage**
 
 Capology.com provides **club-level** total wage bills. Player-level salary breakdowns are not always publicly available. When individual forward wages are needed (Analysis section 3), a per-player estimate is derived by dividing the total wage bill by squad size.
 :::
 
-:::{.callout-note}
+::: callout-note
 **Within-League Transfer Detection**
 
 Mid-season within-league transfers are identified by players who appear under two different clubs in the same season in the FBref data. Transfers from foreign leagues are excluded because those players appear under only one Süper Lig club entry.
 :::
 
----
+------------------------------------------------------------------------
 
 ## Data Preview
 
@@ -222,8 +222,7 @@ suppressPackageStartupMessages({
 load("data/superlig_final.RData")
 ```
 
-::: {.panel-tabset}
-
+::: panel-tabset
 ### Club-Season Table
 
 ```{r preview-team}
@@ -257,9 +256,8 @@ kable(
   caption = "Goalkeeper Statistics (top 15 by save percentage)"
 )
 ```
-
 :::
 
----
+------------------------------------------------------------------------
 
 **Download cleaned dataset:** [`superlig_final.RData`](data/superlig_final.RData)

@@ -10,48 +10,48 @@ This study analyzes the relationship between **squad market value** and **league
 
 Player market values from Transfermarkt and wage data from Capology.com were combined with FBref league statistics to measure spending efficiency at both the club and player level. Linear regression residuals ("efficiency scores") were used to identify clubs that over- and under-perform relative to their squad budgets.
 
----
+------------------------------------------------------------------------
 
 ## Team Members — SmartSpend
 
-1. Saltuk Buğrahan Taşdemir
-2. Kerem Berkalp Çerekçi
+1.  Saltuk Buğrahan Taşdemir-
+2.  Kerem Berkalp Çerekçi-<https://emu-hacettepe-analytics.github.io/emu430-spring2026-kerembcerekci/project.html>
 
----
+------------------------------------------------------------------------
 
 ## Project Title
 
 > **"Spending Efficiency in the Turkish Süper Lig: Squad Market Value, Wages, and Points Performance (2023–2026)"**
 
----
+------------------------------------------------------------------------
 
 ## Dataset Overview
 
 | Source | Coverage | Key Variables |
-|---|---|---|
-| Transfermarkt (worldfootballR) | 3 seasons, ~20 clubs/season | Player market value (€) |
+|------------------------|------------------------|------------------------|
+| Transfermarkt (worldfootballR) | 3 seasons, \~20 clubs/season | Player market value (€) |
 | FBref (worldfootballR) | 3 seasons, club & player level | Points, W/D/L, Goals, Assists, Minutes |
 | Capology.com | 3 seasons, club-level | Annual wages (€) |
 
----
+------------------------------------------------------------------------
 
 ## Key Takeaways
 
-:::{.callout-note appearance="simple"}
+::: {.callout-note appearance="simple"}
 **Summary Findings**
 :::
 
-1. **Strong positive correlation between squad value and points (r ≈ 0.72):** Clubs with higher squad values generally collect more points, but exceptions are notable.
+1.  **Strong positive correlation between squad value and points (r ≈ 0.72):** Clubs with higher squad values generally collect more points, but exceptions are notable.
 
-2. **Galatasaray is the most efficient top club across all three seasons:** They consistently accumulate more points than the regression model predicts — excellent squad management.
+2.  **Galatasaray is the most efficient top club across all three seasons:** They consistently accumulate more points than the regression model predicts — excellent squad management.
 
-3. **Mid-table clubs show surprising efficiency:** Teams like Sivasspor, Alanyaspor, and Kasımpaşa outperform their budgets by 15–25%.
+3.  **Mid-table clubs show surprising efficiency:** Teams like Sivasspor, Alanyaspor, and Kasımpaşa outperform their budgets by 15–25%.
 
-4. **Weak correlation between forward spending and goals scored (r ≈ 0.45):** An expensive attacking squad does not always translate to a high goal tally.
+4.  **Weak correlation between forward spending and goals scored (r ≈ 0.45):** An expensive attacking squad does not always translate to a high goal tally.
 
-5. **The Best XI is dominated by mid-tier club players:** When selected by salary-to-performance ratio, the most "efficient" eleven barely features any players from the top three clubs.
+5.  **The Best XI is dominated by mid-tier club players:** When selected by salary-to-performance ratio, the most "efficient" eleven barely features any players from the top three clubs.
 
----
+------------------------------------------------------------------------
 
 ## Methodology Overview
 
@@ -67,6 +67,4 @@ flowchart LR
     E --> I[Best XI\nSelection]
 ```
 
-
 [SmartSpend Project](https://emu-hacettepe-analytics.github.io/emu430-fall2024-team-smartspend/)
-
