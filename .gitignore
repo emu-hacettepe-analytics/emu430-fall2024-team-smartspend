@@ -10,7 +10,6 @@ _site/
 # Quarto cache & intermediate files
 analysis_cache/
 data_cache/
-analysis_files/
 data_files/
 
 # Ham veri — superlig_final.RData commit edilir, raw dosyalar edilmez
